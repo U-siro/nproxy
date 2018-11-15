@@ -106,13 +106,14 @@ app.use((req, res, next) => {
 
         proxy({
             target: proxyTarget,
-            ws: targetRoute.websocket || true,
+            ws: false,
             changeOrigin: targetRoute.sendHost || true
         })(req, res, next)
     }
 
 
 });
+app.on('upgrade', proxy.upgrade);
 var httpServer = http.createServer(app).listen(80);
 var httpsServer = https.createServer(defaultCertificate, app).listen(443);
 
