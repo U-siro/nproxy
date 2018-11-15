@@ -57,11 +57,13 @@ function letsEncrypt(domains, callback){
 
   app.use('/', greenlock.middleware());
   app.use((req, res, next) => {
+      if(Object.values(config.routing).find(o => o.host.includes(req.headers.host))){
+        res.status(400).send('No such route')
+        res.end('No such route')
+        return
+      }
       let targetRoute = JSON.parse(JSON.stringify(Object.values(config.routing).find(o => o.host.includes(req.headers.host))))
-      if(typeof targetRoute === 'undefined'){
-          res.status(400).send('No such route')
-          res.end('No such route')
-      } else {
+      
           if(req.url == '/cdn-cgi/trace'){
               if(targetRoute.lockDetails){
                   res.status(401).send('Tried to access hidden route')
@@ -78,7 +80,7 @@ function letsEncrypt(domains, callback){
                   changeOrigin: targetRoute.sendHost || true
               })(req, res, next)
           }
-      }
+      
   
   });
   var httpServer = http.createServer(app).listen(80);
