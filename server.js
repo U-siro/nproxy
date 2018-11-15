@@ -65,7 +65,7 @@ app.use((req, res, next) => {
     proxy({
         target: proxyTarget,
         ws: false,
-        changeOrigin: targetRoute.sendHost || true
+        changeOrigin: proxyTarget.sendHost || true
     })(req, res, next)
 
 
@@ -76,7 +76,7 @@ app.on('upgrade', (req, c1, c2) => {
 
     proxy({
         target: proxyTarget,
-        changeOrigin: targetRoute.sendHost || true
+        changeOrigin: proxyTarget.sendHost || true
     }).upgrade(req, c1, c2)
 
 });
