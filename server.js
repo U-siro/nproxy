@@ -57,7 +57,7 @@ function letsEncrypt(domains, callback){
 
   app.use('/', greenlock.middleware());
   app.use((req, res, next) => {
-      let targetRoute = Object.values(config.routing).find(o => o.host.includes(req.headers.host))
+      let targetRoute = Object.assign({}, Object.values(config.routing).find(o => o.host.includes(req.headers.host)))
       if(!targetRoute){
           res.status(400).send('No such route')
           res.end('No such route')
