@@ -24,7 +24,7 @@ let defaultCertificate = {...{
 
 var greenlock = require('greenlock').create({
     version: 'draft-12'
-  , server: 'https://acme-staging-v02.api.letsencrypt.org/directory'
+  , server: 'https://acme-v02.api.letsencrypt.org/directory'
   , configDir: '/tmp/acme/etc'
   });
   
