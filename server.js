@@ -60,7 +60,7 @@ var bodyParser = require('body-parser')
 
 app.use('/', greenlock.middleware());
 app.use((req, res, next) => {
-    let proxyTarget = decideProxyTarget(req.header.host)
+    let proxyTarget = decideProxyTarget(req.headers.host)
 
     proxy({
         target: proxyTarget,
@@ -71,7 +71,7 @@ app.use((req, res, next) => {
 
 });
 app.on('upgrade', (req, c1, c2) => {
-    let proxyTarget = decideProxyTarget(req.header.host)
+    let proxyTarget = decideProxyTarget(req.headers.host)
 
     proxy({
         target: proxyTarget,
