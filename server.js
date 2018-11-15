@@ -59,8 +59,8 @@ var bodyParser = require('body-parser')
 
 
 app.use('/', greenlock.middleware());
-app.use((req, res, next) => {
-    let proxyTarget = decideProxyTarget(req.headers.host)
+app.use((req, res, next) => {   
+     let proxyTarget = decideProxyTarget(req.headers.host, !!req.socket.server.key)
 
     proxy({
         target: proxyTarget,
@@ -70,8 +70,9 @@ app.use((req, res, next) => {
 
 
 });
+
 app.on('upgrade', (req, c1, c2) => {
-    let proxyTarget = decideProxyTarget(req.headers.host)
+    let proxyTarget = decideProxyTarget(req.headers.host, !!req.socket.server.key)
 
     proxy({
         target: proxyTarget,
@@ -82,7 +83,7 @@ app.on('upgrade', (req, c1, c2) => {
 var httpServer = http.createServer(app).listen(80);
 var httpsServer = https.createServer(defaultCertificate, app).listen(443);
 
-function decideProxyTarget(host) {
+function decideProxyTarget(host, isSecure) {
 
     if (!Object.values(config.routing).find(o => o.host.includes(host))) {
         throw new Error('No such host')
@@ -98,16 +99,16 @@ function decideProxyTarget(host) {
             httpTargets.push(v)
         }
     })
-    if (httpsTargets.length > 0 && req.socket.server.key) {
+    if (httpsTargets.length > 0 && isSecure) {
         // https 타겟 O, http 타겟 ?, https로 연결 -> https 타겟으로 연결
         proxyTarget = httpsTargets.random()
-    } else if (httpTargets.length > 0 && !req.socket.server.key) {
+    } else if (httpTargets.length > 0 && !isSecure) {
         // https 타겟 X, http 타겟 O, http로 연결 -> http 타겟으로 연결
         proxyTarget = httpTargets.random()
-    } else if (httpsTargets.length > 0 && !req.socket.server.key) {
+    } else if (httpsTargets.length > 0 && !isSecure) {
         // http 타겟 X, https 타겟 O, http로 연결 -> https 타겟으로 연결
         proxyTarget = httpsTargets.random()
-    } else if (httpTargets.length > 0 && req.socket.server.key) {
+    } else if (httpTargets.length > 0 && isSecure) {
         // http 타겟 O, https 타겟 X, https로 연결 -> http 타겟으로 연결
         proxyTarget = httpTargets.random()
     } else {
