@@ -71,7 +71,7 @@ app.use((req, res, next) => {
 
 });
 
-app.on('upgrade', (req, c1, c2) => {
+let upgradeFn = (req, c1, c2) => {
     let proxyTarget = decideProxyTarget(req.headers.host, !!req.socket.server.key)
 
     proxy({
@@ -79,10 +79,11 @@ app.on('upgrade', (req, c1, c2) => {
         changeOrigin: proxyTarget.sendHost || true
     }).upgrade(req, c1, c2)
 
-});
+};
 var httpServer = http.createServer(app).listen(80);
 var httpsServer = https.createServer(defaultCertificate, app).listen(443);
-
+httpServer.on('upgrade', upgradeFn)
+httpsServer.on('upgrade', upgradeFn)
 function decideProxyTarget(host, isSecure) {
 
     if (!Object.values(config.routing).find(o => o.host.includes(host))) {
