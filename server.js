@@ -60,62 +60,62 @@ var bodyParser = require('body-parser')
 
 app.use('/', greenlock.middleware());
 app.use((req, res, next) => {
-    if (!Object.values(config.routing).find(o => o.host.includes(req.headers.host))) {
-        res.status(400).send('No such route')
-        res.end('No such route')
-        return
-    }
-    let targetRoute = JSON.parse(JSON.stringify(Object.values(config.routing).find(o => o.host.includes(req.headers.host))))
+    let proxyTarget = decideProxyTarget(req.header.host)
 
-    if (req.url == '/cdn-cgi/trace') {
-        if (targetRoute.lockDetails) {
-            res.status(401).send('Tried to access hidden route')
-        } else {
-            if (targetRoute.secure) {
-                targetRoute.secure.key = "####Censored by nProxy####";
-            }
-            res.json(targetRoute)
-        }
-    } else {
-        let proxyTarget
-        let httpTargets = []
-        let httpsTargets = []
-        targetRoute.target.forEach((v) => {
-            if (v.startsWith('https://')) {
-                httpsTargets.push(v)
-            } else {
-                httpTargets.push(v)
-            }
-        })
-        if (httpsTargets.length > 0 && req.socket.server.key) {
-            // https 타겟 O, http 타겟 ?, https로 연결 -> https 타겟으로 연결
-            proxyTarget = httpsTargets.random()
-        } else if (httpTargets.length > 0 && !req.socket.server.key) {
-            // https 타겟 X, http 타겟 O, http로 연결 -> http 타겟으로 연결
-            proxyTarget = httpTargets.random()
-        } else if (httpsTargets.length > 0 && !req.socket.server.key) {
-            // http 타겟 X, https 타겟 O, http로 연결 -> https 타겟으로 연결
-            proxyTarget = httpsTargets.random()
-        } else if (httpTargets.length > 0 && req.socket.server.key) {
-            // http 타겟 O, https 타겟 X, https로 연결 -> http 타겟으로 연결
-            proxyTarget = httpTargets.random()
-        } else {
-            res.sendStatus(404)
-            return
-        }
-
-        proxy({
-            target: proxyTarget,
-            ws: false,
-            changeOrigin: targetRoute.sendHost || true
-        })(req, res, next)
-    }
+    proxy({
+        target: proxyTarget,
+        ws: false,
+        changeOrigin: targetRoute.sendHost || true
+    })(req, res, next)
 
 
 });
-app.on('upgrade', proxy.upgrade);
+app.on('upgrade', (req, c1, c2) => {
+    let proxyTarget = decideProxyTarget(req.header.host)
+
+    proxy({
+        target: proxyTarget,
+        changeOrigin: targetRoute.sendHost || true
+    }).upgrade(req, c1, c2)
+
+});
 var httpServer = http.createServer(app).listen(80);
 var httpsServer = https.createServer(defaultCertificate, app).listen(443);
+
+function decideProxyTarget(host) {
+
+    if (!Object.values(config.routing).find(o => o.host.includes(host))) {
+        throw new Error('No such host')
+    }
+    let targetRoute = JSON.parse(JSON.stringify(Object.values(config.routing).find(o => o.host.includes(host))))
+    let proxyTarget
+    let httpTargets = []
+    let httpsTargets = []
+    targetRoute.target.forEach((v) => {
+        if (v.startsWith('https://')) {
+            httpsTargets.push(v)
+        } else {
+            httpTargets.push(v)
+        }
+    })
+    if (httpsTargets.length > 0 && req.socket.server.key) {
+        // https 타겟 O, http 타겟 ?, https로 연결 -> https 타겟으로 연결
+        proxyTarget = httpsTargets.random()
+    } else if (httpTargets.length > 0 && !req.socket.server.key) {
+        // https 타겟 X, http 타겟 O, http로 연결 -> http 타겟으로 연결
+        proxyTarget = httpTargets.random()
+    } else if (httpsTargets.length > 0 && !req.socket.server.key) {
+        // http 타겟 X, https 타겟 O, http로 연결 -> https 타겟으로 연결
+        proxyTarget = httpsTargets.random()
+    } else if (httpTargets.length > 0 && req.socket.server.key) {
+        // http 타겟 O, https 타겟 X, https로 연결 -> http 타겟으로 연결
+        proxyTarget = httpTargets.random()
+    } else {
+        throw new Error('No servers to handle your request.')
+    }
+    return proxyTarget
+
+}
 
 
 // API Server
