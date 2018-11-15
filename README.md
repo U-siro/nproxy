@@ -5,4 +5,4 @@ Simplest, WebUI-powered node reverse proxy
 Easy! Just run ``node server``.
 
 # License
-This software was licensed with [[GPSL|LICENSE.md]].
+This software was licensed with [GPSL](LICENSE.md).
