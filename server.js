@@ -90,13 +90,13 @@ app.use((req, res, next) => {
         if (httpsTargets.length > 0 && req.socket.server.key) {
             // https 타겟 O, http 타겟 ?, https로 연결 -> https 타겟으로 연결
             proxyTarget = httpsTargets.random()
-        } else if (httpTarget.length > 0 && !req.socket.server.key) {
+        } else if (httpTargets.length > 0 && !req.socket.server.key) {
             // https 타겟 X, http 타겟 O, http로 연결 -> http 타겟으로 연결
             proxyTarget = httpTargets.random()
-        } else if (httpsTarget.length > 0 && !req.socket.server.key) {
+        } else if (httpsTargets.length > 0 && !req.socket.server.key) {
             // http 타겟 X, https 타겟 O, http로 연결 -> https 타겟으로 연결
             proxyTarget = httpsTargets.random()
-        } else if (httpTarget.length > 0 && req.socket.server.key) {
+        } else if (httpTargets.length > 0 && req.socket.server.key) {
             // http 타겟 O, https 타겟 X, https로 연결 -> http 타겟으로 연결
             proxyTarget = httpTargets.random()
         } else {
